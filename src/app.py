@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -9,13 +9,13 @@ from dotenv import load_dotenv
 import os
 import pandas as pd
 import json
+from bson import json_util
 
 
 
 
 # Conectando ao MongoDB
 load_dotenv()
-HUBSPOT_TOKEN = os.getenv("token_hubspot_gepeto")
 MongoURL = os.getenv("MongoURL")
 
 client = MongoClient(MongoURL, server_api=ServerApi('1'))
@@ -41,10 +41,22 @@ def get_tasks():
     for post in collection.find():
         post['_id'] = str(post['_id'])
         tasks.append(post)
-        
+
     tasks = json.dumps(tasks)
 
     return tasks
+
+@app.route('/tasks_formatado')
+def listar_documentos():
+    # Obtendo todos os documentos da coleção
+    documentos = list(collection.find({}))
+
+    # Convertendo os documentos em JSON
+    json_data = json_util.dumps(documentos)
+
+    # Retornando a resposta JSON
+    return jsonify(json_data)
+
 
 @app.route('/add_task', methods=['POST'])
 def add_task():
