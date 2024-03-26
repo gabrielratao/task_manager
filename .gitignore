@@ -1,0 +1,7 @@
+pyvenv.cfg
+Include
+Lib
+Scripts
+share
+*.ipynb
+*.html
