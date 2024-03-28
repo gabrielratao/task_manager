@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask_cors import CORS
+
 
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -25,6 +27,7 @@ collection = db.tasks
 
 
 app = Flask(__name__)
+CORS(app) #acesso ao navegador
 
 @app.route('/')
 def index():
@@ -33,7 +36,7 @@ def index():
 
 @app.route('/teste')
 def teste():
-    return 'APP ok'
+    return jsonify('APP ok')
 
 #read tasks
 @app.route('/tasks')
@@ -53,10 +56,13 @@ def add_task():
     print(body)
     # name = request.form['name']
     # description = request.form['description']
-    task = {'name': body['name'], 'description': body['description']}
+    # task = {'name': body['name'], 'description': body['description']} criar apenas com propriedades especificas
+    task = body
     collection.insert_one(task)
     # return redirect(url_for('index'))
-    return jsonify({body['name']: "criado com sucesso"})
+    body['_id'] = str(body['_id'])
+    return jsonify({body['name']: "criado com sucesso",
+                    "properties": body})
 
 #delete task
 @app.route('/tasks/<string:id>', methods=['DELETE'])
