@@ -10,7 +10,7 @@ import os
 import pandas as pd
 import json
 from bson import json_util
-
+from bson import ObjectId
 
 
 
@@ -20,7 +20,7 @@ MongoURL = os.getenv("MongoURL")
 
 client = MongoClient(MongoURL, server_api=ServerApi('1'))
 db = client.task_manager
-collection = collection = db.tasks
+collection = db.tasks
 
 
 
@@ -35,6 +35,7 @@ def index():
 def teste():
     return 'APP ok'
 
+#read tasks
 @app.route('/tasks')
 def get_tasks():
     tasks = []
@@ -42,29 +43,50 @@ def get_tasks():
         post['_id'] = str(post['_id'])
         tasks.append(post)
 
-    tasks = json.dumps(tasks)
-
-    return tasks
-
-@app.route('/tasks_formatado')
-def listar_documentos():
-    # Obtendo todos os documentos da coleção
-    documentos = list(collection.find({}))
-
-    # Convertendo os documentos em JSON
-    json_data = json_util.dumps(documentos)
-
-    # Retornando a resposta JSON
-    return jsonify(json_data)
-
-
-@app.route('/add_task', methods=['POST'])
+    
+    return jsonify(tasks)
+    
+#create tasks
+@app.route('/tasks', methods=['POST'])
 def add_task():
-    name = request.form['name']
-    description = request.form['description']
-    task = {'name': name, 'description': description}
+    body = request.json
+    print(body)
+    # name = request.form['name']
+    # description = request.form['description']
+    task = {'name': body['name'], 'description': body['description']}
     collection.insert_one(task)
-    return redirect(url_for('index'))
+    # return redirect(url_for('index'))
+    return jsonify({body['name']: "criado com sucesso"})
+
+#delete task
+@app.route('/tasks/<string:id>', methods=['DELETE'])
+def remove_task(id):
+    print(id)
+    result = collection.delete_one({'_id': ObjectId(id)})
+    if result.deleted_count == 1:
+        return jsonify({'id': id,
+                        'deleted': True})
+    else:
+        return jsonify({'id': id,
+                        'deleted': False})
+
+#update task
+@app.route('/tasks/<string:id>', methods=['PUT', 'PATCH'])
+def update_taks(id):
+    # collection.update_one()
+    body = request.json
+    result = collection.update_one({'_id': ObjectId(id)}, {'$set': body})
+    
+    if result.modified_count == 1:
+        return jsonify({'id': id,
+                        'updated': True,
+                        'properties': body})
+    else:
+        return jsonify({'id': id,
+                        'updated': False})
+
+
+
 
 if __name__ == '__main__':
-    app.run(debug=True, port=3000)
+    app.run(debug=False, port=3000)
